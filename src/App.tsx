@@ -145,7 +145,7 @@ function App() {
           <img src={logo} alt="ButterGoUp Logo" style={{ height: '50px', width: 'auto' }} />
           <div>
             <h1>ButterGoUp</h1>
-            <p className="subheader">NZ Economic Eyes</p>
+            <p className="subheader">The cost of living on an island</p>
           </div>
         </div>
         <MarketStatusCompact />
