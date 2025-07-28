@@ -93,7 +93,7 @@ export function NewsMarkersBar({ newsEvents, chart }: NewsMarkersBarProps) {
     }
   }, [chart, newsEvents, selectedNewsId, hoveredNewsId, selectedNews])
   
-  const handleMarkerClick = (event: React.MouseEvent, newsEvent: NewsEvent) => {
+  const handleMarkerClick = (_event: React.MouseEvent, newsEvent: NewsEvent) => {
     const markerX = markerPositions.get(newsEvent.id)
     
     if (markerX !== undefined && containerRef.current) {
@@ -283,26 +283,16 @@ interface LinkModalProps {
 }
 
 function LinkModal({ url, onClose }: LinkModalProps) {
-  const [content, setContent] = useState<string>('Loading...')
   const [isLoading, setIsLoading] = useState(true)
   const modalRef = useRef<HTMLDivElement>(null)
   
   useEffect(() => {
-    // Fetch the content
-    const fetchContent = async () => {
-      try {
-        setIsLoading(true)
-        // For now, we'll show the URL in an iframe
-        // In a real app, you might want to fetch and parse the content
-        setContent('')
-      } catch (error) {
-        setContent('Error loading content')
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    // Simulate loading delay for iframe
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 500)
     
-    fetchContent()
+    return () => clearTimeout(timer)
   }, [url])
   
   useEffect(() => {
