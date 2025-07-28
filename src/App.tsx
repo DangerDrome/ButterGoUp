@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { PriceChart, TechnicalIndicatorType } from './components/PriceChart'
 import { MarketStatusCompact } from './components/MarketStatusCompact'
 import { useEconomicStore } from './stores/economicStore'
+import type { CurrencyPair, EconomicRate, CommodityPrice } from './types'
 import { mockIndicators } from './data/mockData'
 import { RefreshCw, TrendingUp, TrendingDown, DollarSign, Percent, BarChart3, Activity, Package, Home, Settings, Bell, FileText, Download, Plus, Filter, Palette, LineChart, CandlestickChart, AreaChart, BarChart, TrendingUp as ChartLine, Newspaper } from 'lucide-react'
 import logo from '../logo.svg'
@@ -13,7 +14,6 @@ function formatValue(value: number, unit: string, decimals: number = 2): string 
   }
   return value.toFixed(decimals)
 }
-
 
 function App() {
   const { 
@@ -537,11 +537,11 @@ function App() {
                   <h2>
                     {selectedIndicator.symbol} - {selectedIndicator.name}
                     {selectedIndicator.category === 'commodity' && 'measureUnit' in selectedIndicator && (
-                      <span className="measure-unit"> ({(selectedIndicator as any).measureUnit})</span>
+                      <span className="measure-unit"> ({(selectedIndicator as CommodityPrice).measureUnit})</span>
                     )}
                   </h2>
                   {'source' in selectedIndicator && (
-                    <p className="data-source">Source: {(selectedIndicator as any).source}</p>
+                    <p className="data-source">Source: {(selectedIndicator as EconomicRate | CommodityPrice).source}</p>
                   )}
                 </div>
               </div>
@@ -564,22 +564,26 @@ function App() {
                   <div className="bid-ask-spread">
                     <div>
                       <span className="label">Bid</span>
-                      <span className="value">{(selectedIndicator as any).bid?.toFixed(4)}</span>
+                      <span className="value">{(selectedIndicator as CurrencyPair).bid?.toFixed(4)}</span>
                     </div>
                     <div>
                       <span className="label">Ask</span>
-                      <span className="value">{(selectedIndicator as any).ask?.toFixed(4)}</span>
+                      <span className="value">{(selectedIndicator as CurrencyPair).ask?.toFixed(4)}</span>
                     </div>
                     <div>
                       <span className="label">Spread</span>
-                      <span className="value">{(selectedIndicator as any).spread?.toFixed(4)}</span>
+                      <span className="value">{(selectedIndicator as CurrencyPair).spread?.toFixed(4)}</span>
                     </div>
                   </div>
                 )}
                 
-                {'nextUpdate' in selectedIndicator && (selectedIndicator as any).nextUpdate && (
+                {'nextUpdate' in selectedIndicator && (selectedIndicator as EconomicRate).nextUpdate && (
                   <div className="next-update">
-                    Next update: {(typeof (selectedIndicator as any).nextUpdate === 'string' ? new Date((selectedIndicator as any).nextUpdate) : (selectedIndicator as any).nextUpdate).toLocaleDateString('en-NZ')}
+                    Next update: {(() => {
+                      const nextUpdate = (selectedIndicator as EconomicRate).nextUpdate
+                      if (!nextUpdate) return ''
+                      return (typeof nextUpdate === 'string' ? new Date(nextUpdate) : nextUpdate).toLocaleDateString('en-NZ')
+                    })()}
                   </div>
                 )}
               </div>
@@ -652,7 +656,7 @@ function App() {
                       <div className="indicator-name">
                         {indicator.name}
                         {isCommodity && 'measureUnit' in indicator && (
-                          <span className="measure-unit"> ({(indicator as any).measureUnit})</span>
+                          <span className="measure-unit"> ({(indicator as CommodityPrice).measureUnit})</span>
                         )}
                       </div>
                     </div>
@@ -820,7 +824,7 @@ function App() {
                     {'source' in selectedIndicator && (
                       <div className="info-detail">
                         <span className="info-label">Source</span>
-                        <span className="info-value">{(selectedIndicator as any).source}</span>
+                        <span className="info-value">{(selectedIndicator as EconomicRate | CommodityPrice).source}</span>
                       </div>
                     )}
                   </div>

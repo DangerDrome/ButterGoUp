@@ -312,7 +312,8 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
               topColor: 'rgba(62, 207, 142, 0.05)',
               bottomColor: 'rgba(62, 207, 142, 0.05)',
               lineColor: 'transparent',
-              lineWidth: 0 as any,
+              lineWidth: 1,
+              lineVisible: false,
               crosshairMarkerVisible: false,
             })
             
@@ -340,7 +341,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             middleSeries.setData(bbData.map(d => ({ time: d.time, value: d.middle })))
             lowerSeries.setData(bbData.map(d => ({ time: d.time, value: d.lower })))
             
-            indicatorSeriesRef.current.set('bollinger-fill', fillSeries as any)
+            indicatorSeriesRef.current.set('bollinger-fill', fillSeries as unknown as ISeriesApi<'Line'>)
             indicatorSeriesRef.current.set('bollinger', middleSeries)
             indicatorSeriesRef.current.set('bollinger-upper', upperSeries)
             indicatorSeriesRef.current.set('bollinger-lower', lowerSeries)
@@ -440,7 +441,8 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
               topColor: 'rgba(156, 39, 176, 0.05)',
               bottomColor: 'rgba(156, 39, 176, 0.05)',
               lineColor: 'transparent',
-              lineWidth: 0 as any,
+              lineWidth: 1,
+              lineVisible: false,
               crosshairMarkerVisible: false,
             })
             
@@ -466,7 +468,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             middleSeries.setData(stdDevData.map(d => ({ time: d.time, value: d.middle })))
             lowerSeries.setData(stdDevData.map(d => ({ time: d.time, value: d.lower })))
             
-            indicatorSeriesRef.current.set('stddev-fill', fillSeries as any)
+            indicatorSeriesRef.current.set('stddev-fill', fillSeries as unknown as ISeriesApi<'Line'>)
             indicatorSeriesRef.current.set('stddev', middleSeries)
             indicatorSeriesRef.current.set('stddev-upper', upperSeries)
             indicatorSeriesRef.current.set('stddev-lower', lowerSeries)
@@ -494,14 +496,12 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             })
             
             // Configure the separate price scale
-            if (chartRef.current) {
-              chartRef.current.priceScale('bbpercent').applyOptions({
+            chartRef.current.priceScale('bbpercent').applyOptions({
               scaleMargins: {
                 top: 0.8,
                 bottom: 0,
               },
             })
-            }
             
             series.setData(bbPercentData.map(d => ({ time: d.time, value: d.value })))
             indicatorSeriesRef.current.set(indicator, series)
@@ -585,7 +585,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
 
     // Add new compare series
     compareRanges.forEach(range => {
-      if (!compareSeriesRef.current.has(range)) {
+      if (!compareSeriesRef.current.has(range) && chartRef.current) {
         const color = rangeColors[range] || '#8b8b8b'
         
         // Create offset data based on range
