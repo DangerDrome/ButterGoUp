@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Calendar, ChevronDown, ChevronUp } from 'lucide-react'
 import type { NewsEvent } from '../types'
 import { impactColors } from '../services/newsService'
 
@@ -8,7 +8,7 @@ interface NewsPanelProps {
   onNewsClick?: (news: NewsEvent) => void
 }
 
-export function NewsPanel({ newsEvents, onNewsClick }: NewsPanelProps) {
+export function NewsPanel({ newsEvents }: NewsPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   
   if (newsEvents.length === 0) {

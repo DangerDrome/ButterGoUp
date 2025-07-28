@@ -1,5 +1,5 @@
 import type { NewsEvent } from '../types'
-import { mockNewsEvents, getNewsInRange, getNewsForIndicator, getNewsByImpact } from '../data/mockNewsData'
+import { mockNewsEvents, getNewsInRange, getNewsByImpact } from '../data/mockNewsData'
 
 // Color mapping for impact levels
 export const impactColors = {
@@ -82,11 +82,7 @@ export function getNewsSummaryForDate(date: string): string {
 }
 
 // Future: Integration with real news APIs
-export async function fetchFromNewsAPI(
-  query: string,
-  fromDate: string,
-  toDate: string
-): Promise<NewsEvent[]> {
+export async function fetchFromNewsAPI(): Promise<NewsEvent[]> {
   // This would be implemented when integrating with NewsAPI
   // const API_KEY = import.meta.env.VITE_NEWS_API_KEY
   // const url = `https://newsapi.org/v2/everything?q=${query}&from=${fromDate}&to=${toDate}&apiKey=${API_KEY}`

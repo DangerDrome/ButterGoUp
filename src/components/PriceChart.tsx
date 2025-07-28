@@ -1,23 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
-import { createChart, IChartApi, ColorType, ISeriesApi, CandlestickData, LineData, SeriesMarker } from 'lightweight-charts'
+import { createChart, IChartApi, ColorType, ISeriesApi } from 'lightweight-charts'
 import type { PriceData, NewsEvent } from '../types'
 import { 
   calculateBollingerBands, 
   calculateSMA, 
   calculateEMA, 
-  calculateRSI,
-  calculateMACD,
   calculateStdDevChannels,
   calculateBBPercentile
 } from '../utils/technicalIndicators'
-import { fetchNewsEvents, formatNewsForMarkers, impactColors } from '../services/newsService'
+import { fetchNewsEvents } from '../services/newsService'
 import { NewsMarkersBar } from './NewsMarkersBar'
 
-export type IndicatorType = 'none' | 'bollinger' | 'sma' | 'ema' | 'rsi' | 'macd' | 'stddev' | 'bbpercent'
+export type TechnicalIndicatorType = 'none' | 'bollinger' | 'sma' | 'ema' | 'rsi' | 'macd' | 'stddev' | 'bbpercent' | 'sma20' | 'sma50' | 'ema12' | 'ema26'
 
 interface PriceChartProps {
   data: PriceData[]
-  activeIndicators?: IndicatorType[]
+  activeIndicators?: TechnicalIndicatorType[]
   chartType?: 'candlestick' | 'line' | 'area' | 'hlcArea' | 'columns'
   shouldFitContent?: boolean
   setShouldFitContent?: (value: boolean) => void
@@ -231,7 +229,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
     // First, handle removals
     const indicatorsToRemove = new Set<string>()
     
-    indicatorSeriesRef.current.forEach((series, key) => {
+    indicatorSeriesRef.current.forEach((_series, key) => {
       // For bollinger bands, check the main indicator
       if (key === 'bollinger' || key === 'bollinger-upper' || key === 'bollinger-lower' || key === 'bollinger-fill') {
         if (!activeIndicators.includes('bollinger')) {
@@ -250,7 +248,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
           indicatorsToRemove.add(key)
         }
       }
-      else if (!activeIndicators.includes(key)) {
+      else if (!activeIndicators.includes(key as TechnicalIndicatorType)) {
         indicatorsToRemove.add(key)
       }
     })
@@ -290,11 +288,12 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             })
             
             // Create area series for the background fill
+            if (!chartRef.current) break
             const fillSeries = chartRef.current.addAreaSeries({
               topColor: 'rgba(62, 207, 142, 0.05)',
               bottomColor: 'rgba(62, 207, 142, 0.05)',
               lineColor: 'transparent',
-              lineWidth: 0,
+              lineWidth: 0 as any,
               crosshairMarkerVisible: false,
             })
             
@@ -322,7 +321,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             middleSeries.setData(bbData.map(d => ({ time: d.time, value: d.middle })))
             lowerSeries.setData(bbData.map(d => ({ time: d.time, value: d.lower })))
             
-            indicatorSeriesRef.current.set('bollinger-fill', fillSeries)
+            indicatorSeriesRef.current.set('bollinger-fill', fillSeries as any)
             indicatorSeriesRef.current.set('bollinger', middleSeries)
             indicatorSeriesRef.current.set('bollinger-upper', upperSeries)
             indicatorSeriesRef.current.set('bollinger-lower', lowerSeries)
@@ -342,56 +341,56 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
           
         case 'sma20':
           const sma20Data = calculateSMA(data, 20)
-          if (!existingSeries) {
+          if (!existingSeries && chartRef.current) {
             const series = chartRef.current.addLineSeries({
               color: '#ff9800',
               lineWidth: 2,
             })
             series.setData(sma20Data.map(d => ({ time: d.time, value: d.value })))
             indicatorSeriesRef.current.set(indicator, series)
-          } else {
+          } else if (existingSeries) {
             existingSeries.setData(sma20Data.map(d => ({ time: d.time, value: d.value })))
           }
           break
           
         case 'sma50':
           const sma50Data = calculateSMA(data, 50)
-          if (!existingSeries) {
+          if (!existingSeries && chartRef.current) {
             const series = chartRef.current.addLineSeries({
               color: '#2196f3',
               lineWidth: 2,
             })
             series.setData(sma50Data.map(d => ({ time: d.time, value: d.value })))
             indicatorSeriesRef.current.set(indicator, series)
-          } else {
+          } else if (existingSeries) {
             existingSeries.setData(sma50Data.map(d => ({ time: d.time, value: d.value })))
           }
           break
           
         case 'ema12':
           const ema12Data = calculateEMA(data, 12)
-          if (!existingSeries) {
+          if (!existingSeries && chartRef.current) {
             const series = chartRef.current.addLineSeries({
               color: '#9c27b0',
               lineWidth: 2,
             })
             series.setData(ema12Data.map(d => ({ time: d.time, value: d.value })))
             indicatorSeriesRef.current.set(indicator, series)
-          } else {
+          } else if (existingSeries) {
             existingSeries.setData(ema12Data.map(d => ({ time: d.time, value: d.value })))
           }
           break
           
         case 'ema26':
           const ema26Data = calculateEMA(data, 26)
-          if (!existingSeries) {
+          if (!existingSeries && chartRef.current) {
             const series = chartRef.current.addLineSeries({
               color: '#e91e63',
               lineWidth: 2,
             })
             series.setData(ema26Data.map(d => ({ time: d.time, value: d.value })))
             indicatorSeriesRef.current.set(indicator, series)
-          } else {
+          } else if (existingSeries) {
             existingSeries.setData(ema26Data.map(d => ({ time: d.time, value: d.value })))
           }
           break
@@ -417,11 +416,12 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             })
             
             // Create area series for the background fill
+            if (!chartRef.current) break
             const fillSeries = chartRef.current.addAreaSeries({
               topColor: 'rgba(156, 39, 176, 0.05)',
               bottomColor: 'rgba(156, 39, 176, 0.05)',
               lineColor: 'transparent',
-              lineWidth: 0,
+              lineWidth: 0 as any,
               crosshairMarkerVisible: false,
             })
             
@@ -447,7 +447,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             middleSeries.setData(stdDevData.map(d => ({ time: d.time, value: d.middle })))
             lowerSeries.setData(stdDevData.map(d => ({ time: d.time, value: d.lower })))
             
-            indicatorSeriesRef.current.set('stddev-fill', fillSeries)
+            indicatorSeriesRef.current.set('stddev-fill', fillSeries as any)
             indicatorSeriesRef.current.set('stddev', middleSeries)
             indicatorSeriesRef.current.set('stddev-upper', upperSeries)
             indicatorSeriesRef.current.set('stddev-lower', lowerSeries)
@@ -467,29 +467,28 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
           
         case 'bbpercent':
           const bbPercentData = calculateBBPercentile(data, 20, 2)
-          if (!existingSeries) {
+          if (!existingSeries && chartRef.current) {
             const series = chartRef.current.addLineSeries({
               color: '#ff5722',
               lineWidth: 2,
               priceScaleId: 'bbpercent',
-              scaleMargins: {
-                top: 0.8,
-                bottom: 0,
-              },
             })
             
             // Configure the separate price scale
-            chartRef.current.priceScale('bbpercent').applyOptions({
+            if (chartRef.current) {
+              chartRef.current.priceScale('bbpercent').applyOptions({
               scaleMargins: {
                 top: 0.8,
                 bottom: 0,
               },
             })
+            }
             
             series.setData(bbPercentData.map(d => ({ time: d.time, value: d.value })))
             indicatorSeriesRef.current.set(indicator, series)
             
             // Add reference lines at 0, 50, and 100
+            if (!chartRef.current) break
             const referenceLine0 = chartRef.current.addLineSeries({
               color: 'rgba(255, 87, 34, 0.3)',
               lineWidth: 1,
@@ -521,7 +520,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
             indicatorSeriesRef.current.set('bbpercent-ref0', referenceLine0)
             indicatorSeriesRef.current.set('bbpercent-ref50', referenceLine50)
             indicatorSeriesRef.current.set('bbpercent-ref100', referenceLine100)
-          } else {
+          } else if (existingSeries) {
             existingSeries.setData(bbPercentData.map(d => ({ time: d.time, value: d.value })))
             
             // Update reference lines
@@ -565,7 +564,6 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
         <NewsMarkersBar 
           newsEvents={newsEvents}
           chart={chartRef.current}
-          data={data}
         />
       )}
     </div>

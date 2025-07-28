@@ -1,16 +1,15 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { IChartApi } from 'lightweight-charts'
-import { ChevronUp, ArrowUpCircle } from 'lucide-react'
-import type { NewsEvent, PriceData } from '../types'
+import { ArrowUpCircle } from 'lucide-react'
+import type { NewsEvent } from '../types'
 import { impactColors } from '../services/newsService'
 
 interface NewsMarkersBarProps {
   newsEvents: NewsEvent[]
   chart: IChartApi
-  data: PriceData[]
 }
 
-export function NewsMarkersBar({ newsEvents, chart, data }: NewsMarkersBarProps) {
+export function NewsMarkersBar({ newsEvents, chart }: NewsMarkersBarProps) {
   const [selectedNews, setSelectedNews] = useState<NewsEvent | null>(null)
   const [popoverPosition, setPopoverPosition] = useState<{ x: number; y: number } | null>(null)
   const [markerPositions, setMarkerPositions] = useState<Map<string, number>>(new Map())
@@ -69,7 +68,7 @@ export function NewsMarkersBar({ newsEvents, chart, data }: NewsMarkersBarProps)
     setSelectedMarkerColor(null)
   }
   
-  const handleMarkerHover = (event: React.MouseEvent, newsEvent: NewsEvent) => {
+  const handleMarkerHover = (_event: React.MouseEvent, newsEvent: NewsEvent) => {
     const markerX = markerPositions.get(newsEvent.id)
     setHoveredMarkerX(markerX || null)
     setHoveredMarkerColor(impactColors[newsEvent.impact])

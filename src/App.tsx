@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { PriceChart } from './components/PriceChart'
+import { PriceChart, TechnicalIndicatorType } from './components/PriceChart'
 import { MarketStatusCompact } from './components/MarketStatusCompact'
 import { useEconomicStore } from './stores/economicStore'
 import { mockIndicators } from './data/mockData'
-import { RefreshCw, TrendingUp, TrendingDown, Clock, DollarSign, Percent, BarChart3, Activity, Package, Home, Settings, Bell, FileText, Download, Plus, Filter, Palette, LineChart, CandlestickChart, AreaChart, BarChart, TrendingUp as ChartLine, Newspaper } from 'lucide-react'
+import { RefreshCw, TrendingUp, TrendingDown, DollarSign, Percent, BarChart3, Activity, Package, Home, Settings, Bell, FileText, Download, Plus, Filter, Palette, LineChart, CandlestickChart, AreaChart, BarChart, TrendingUp as ChartLine, Newspaper } from 'lucide-react'
 import logo from '../logo.svg'
 import './index.css'
 
@@ -14,19 +14,6 @@ function formatValue(value: number, unit: string, decimals: number = 2): string 
   return value.toFixed(decimals)
 }
 
-function formatLastUpdated(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  const now = new Date()
-  const diffMs = now.getTime() - dateObj.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  return `${diffDays}d ago`
-}
 
 function App() {
   const { 
@@ -43,7 +30,7 @@ function App() {
   } = useEconomicStore()
   
   const [showIndicators, setShowIndicators] = useState(false)
-  const [activeIndicators, setActiveIndicators] = useState<string[]>([])
+  const [activeIndicators, setActiveIndicators] = useState<TechnicalIndicatorType[]>([])
   const [showChartTypes, setShowChartTypes] = useState(false)
   const [chartType, setChartType] = useState<'candlestick' | 'line' | 'area' | 'hlcArea' | 'columns'>('candlestick')
   const [shouldFitContent, setShouldFitContent] = useState(false)
@@ -436,11 +423,11 @@ function App() {
                   <h2>
                     {selectedIndicator.symbol} - {selectedIndicator.name}
                     {selectedIndicator.category === 'commodity' && 'measureUnit' in selectedIndicator && (
-                      <span className="measure-unit"> ({selectedIndicator.measureUnit})</span>
+                      <span className="measure-unit"> ({(selectedIndicator as any).measureUnit})</span>
                     )}
                   </h2>
                   {'source' in selectedIndicator && (
-                    <p className="data-source">Source: {selectedIndicator.source}</p>
+                    <p className="data-source">Source: {(selectedIndicator as any).source}</p>
                   )}
                 </div>
               </div>
@@ -463,22 +450,22 @@ function App() {
                   <div className="bid-ask-spread">
                     <div>
                       <span className="label">Bid</span>
-                      <span className="value">{selectedIndicator.bid?.toFixed(4)}</span>
+                      <span className="value">{(selectedIndicator as any).bid?.toFixed(4)}</span>
                     </div>
                     <div>
                       <span className="label">Ask</span>
-                      <span className="value">{selectedIndicator.ask?.toFixed(4)}</span>
+                      <span className="value">{(selectedIndicator as any).ask?.toFixed(4)}</span>
                     </div>
                     <div>
                       <span className="label">Spread</span>
-                      <span className="value">{selectedIndicator.spread?.toFixed(4)}</span>
+                      <span className="value">{(selectedIndicator as any).spread?.toFixed(4)}</span>
                     </div>
                   </div>
                 )}
                 
-                {'nextUpdate' in selectedIndicator && selectedIndicator.nextUpdate && (
+                {'nextUpdate' in selectedIndicator && (selectedIndicator as any).nextUpdate && (
                   <div className="next-update">
-                    Next update: {(typeof selectedIndicator.nextUpdate === 'string' ? new Date(selectedIndicator.nextUpdate) : selectedIndicator.nextUpdate).toLocaleDateString('en-NZ')}
+                    Next update: {(typeof (selectedIndicator as any).nextUpdate === 'string' ? new Date((selectedIndicator as any).nextUpdate) : (selectedIndicator as any).nextUpdate).toLocaleDateString('en-NZ')}
                   </div>
                 )}
               </div>
@@ -550,7 +537,7 @@ function App() {
                     <div className="indicator-name">
                       {indicator.name}
                       {isCommodity && 'measureUnit' in indicator && (
-                        <span className="measure-unit"> ({indicator.measureUnit})</span>
+                        <span className="measure-unit"> ({(indicator as any).measureUnit})</span>
                       )}
                     </div>
                   </div>

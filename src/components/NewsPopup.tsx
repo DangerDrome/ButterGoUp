@@ -19,7 +19,6 @@ export function NewsPopup({ news, onClose, anchorPosition }: NewsPopupProps) {
     
     const rect = popupRef.current.getBoundingClientRect()
     const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
     
     let top = anchorPosition.y - rect.height - 10
     let left = anchorPosition.x - rect.width / 2
