@@ -8,6 +8,19 @@ export default defineConfig({
     open: true
   },
   build: {
-    target: 'esnext'
-  }
+    target: 'esnext',
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'trading-charts': ['lightweight-charts'],
+          'react-vendor': ['react', 'react-dom'],
+          'utils': ['zustand', 'lucide-react']
+        }
+      }
+    }
+  },
+  base: '/'
 })

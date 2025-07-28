@@ -350,4 +350,4 @@ export const mockCommodities: CommodityPrice[] = [
   }
 ]
 
-export const mockIndicators = [...mockCurrencyPairs, ...mockEconomicIndicators, ...mockCommodities]
+export const mockIndicators = [...mockCommodities, ...mockCurrencyPairs, ...mockEconomicIndicators]

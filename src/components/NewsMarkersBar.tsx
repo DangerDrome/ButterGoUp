@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { IChartApi } from 'lightweight-charts'
+import { ChevronUp, ArrowUpCircle } from 'lucide-react'
 import type { NewsEvent, PriceData } from '../types'
 import { impactColors } from '../services/newsService'
 
@@ -12,52 +13,99 @@ interface NewsMarkersBarProps {
 export function NewsMarkersBar({ newsEvents, chart, data }: NewsMarkersBarProps) {
   const [selectedNews, setSelectedNews] = useState<NewsEvent | null>(null)
   const [popoverPosition, setPopoverPosition] = useState<{ x: number; y: number } | null>(null)
+  const [markerPositions, setMarkerPositions] = useState<Map<string, number>>(new Map())
+  const [selectedMarkerX, setSelectedMarkerX] = useState<number | null>(null)
+  const [hoveredMarkerX, setHoveredMarkerX] = useState<number | null>(null)
+  const [selectedMarkerColor, setSelectedMarkerColor] = useState<string | null>(null)
+  const [hoveredMarkerColor, setHoveredMarkerColor] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   
-  // Calculate marker positions based on time scale
-  const getMarkerPosition = (eventTime: string) => {
-    if (!containerRef.current) return null
+  // Update marker positions on animation frame for smooth updates
+  useLayoutEffect(() => {
+    let animationFrameId: number
     
-    const timeScale = chart.timeScale()
-    const coordinate = timeScale.timeToCoordinate(eventTime as any)
+    const updatePositions = () => {
+      const timeScale = chart.timeScale()
+      const newPositions = new Map<string, number>()
+      
+      newsEvents.forEach(event => {
+        const coordinate = timeScale.timeToCoordinate(event.time as any)
+        if (coordinate !== null) {
+          newPositions.set(event.id, coordinate)
+        }
+      })
+      
+      setMarkerPositions(newPositions)
+      
+      // Keep updating on next frame
+      animationFrameId = requestAnimationFrame(updatePositions)
+    }
     
-    if (coordinate === null) return null
+    // Start the animation loop
+    animationFrameId = requestAnimationFrame(updatePositions)
     
-    const containerRect = containerRef.current.getBoundingClientRect()
-    const chartRect = containerRef.current.parentElement?.getBoundingClientRect()
-    
-    if (!chartRect) return null
-    
-    // Adjust for chart margins
-    return coordinate
-  }
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [chart, newsEvents])
   
   const handleMarkerClick = (event: React.MouseEvent, newsEvent: NewsEvent) => {
     const rect = event.currentTarget.getBoundingClientRect()
+    const markerX = markerPositions.get(newsEvent.id)
+    
     setPopoverPosition({
       x: rect.left + rect.width / 2,
       y: rect.top
     })
     setSelectedNews(newsEvent)
+    setSelectedMarkerX(markerX || null)
+    setSelectedMarkerColor(impactColors[newsEvent.impact])
   }
   
   const closePopover = () => {
     setSelectedNews(null)
     setPopoverPosition(null)
+    setSelectedMarkerX(null)
+    setSelectedMarkerColor(null)
   }
   
-  // Filter events that are within the visible range
-  const visibleEvents = newsEvents.filter(event => {
-    const position = getMarkerPosition(event.time)
-    return position !== null
-  })
+  const handleMarkerHover = (event: React.MouseEvent, newsEvent: NewsEvent) => {
+    const markerX = markerPositions.get(newsEvent.id)
+    setHoveredMarkerX(markerX || null)
+    setHoveredMarkerColor(impactColors[newsEvent.impact])
+  }
+  
+  const handleMarkerLeave = () => {
+    setHoveredMarkerX(null)
+    setHoveredMarkerColor(null)
+  }
   
   return (
     <>
       <div ref={containerRef} className="news-markers-bar">
-        {visibleEvents.map(event => {
-          const position = getMarkerPosition(event.time)
-          if (!position) return null
+        {selectedMarkerX !== null && (
+          <div 
+            className="news-marker-line selected"
+            style={{ 
+              left: `${selectedMarkerX}px`,
+              borderColor: selectedMarkerColor || 'var(--accent)'
+            }}
+          />
+        )}
+        {hoveredMarkerX !== null && selectedMarkerX !== hoveredMarkerX && (
+          <div 
+            className="news-marker-line hovered"
+            style={{ 
+              left: `${hoveredMarkerX}px`,
+              borderColor: hoveredMarkerColor || 'var(--text-secondary)'
+            }}
+          />
+        )}
+        {newsEvents.map(event => {
+          const position = markerPositions.get(event.id)
+          if (position === undefined) return null
+          
+          const iconSize = event.impact === 'high' ? 20 : 16
           
           return (
             <div
@@ -65,13 +113,18 @@ export function NewsMarkersBar({ newsEvents, chart, data }: NewsMarkersBarProps)
               className="news-marker"
               style={{
                 left: `${position}px`,
-                backgroundColor: impactColors[event.impact],
-                width: event.impact === 'high' ? '10px' : '8px',
-                height: event.impact === 'high' ? '10px' : '8px',
+                marginLeft: `-${iconSize / 2}px`,
               }}
               onClick={(e) => handleMarkerClick(e, event)}
+              onMouseEnter={(e) => handleMarkerHover(e, event)}
+              onMouseLeave={handleMarkerLeave}
               title={event.title}
-            />
+            >
+              <ArrowUpCircle 
+                size={iconSize} 
+                color={impactColors[event.impact]}
+              />
+            </div>
           )
         })}
       </div>
@@ -128,7 +181,7 @@ function NewsPopover({ news, position, onClose }: NewsPopoverProps) {
       style={{
         position: 'fixed',
         left: `${position.x}px`,
-        top: `${position.y - 10}px`,
+        top: `${position.y - 40}px`,
         transform: 'translate(-50%, -100%)'
       }}
     >
