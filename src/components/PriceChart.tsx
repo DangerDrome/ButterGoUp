@@ -16,18 +16,20 @@ export type TechnicalIndicatorType = 'none' | 'bollinger' | 'sma' | 'ema' | 'rsi
 interface PriceChartProps {
   data: PriceData[]
   activeIndicators?: TechnicalIndicatorType[]
-  chartType?: 'candlestick' | 'line' | 'area' | 'hlcArea' | 'columns'
+  chartType?: 'candlestick' | 'line' | 'area' | 'hlcArea' | 'columns' | 'baseline'
   shouldFitContent?: boolean
   setShouldFitContent?: (value: boolean) => void
   showNews?: boolean
   indicatorId?: string
+  compareRanges?: string[]
 }
 
-export function PriceChart({ data, activeIndicators = [], chartType = 'candlestick', shouldFitContent = false, setShouldFitContent, showNews = false, indicatorId }: PriceChartProps) {
+export function PriceChart({ data, activeIndicators = [], chartType = 'candlestick', shouldFitContent = false, setShouldFitContent, showNews = false, indicatorId, compareRanges = [] }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<any> | null>(null)
   const indicatorSeriesRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map())
+  const compareSeriesRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map())
   const [newsEvents, setNewsEvents] = useState<NewsEvent[]>([])
 
   // Create chart only once
@@ -165,6 +167,22 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
         })))
         break
         
+      case 'baseline':
+        // Calculate the average price for baseline
+        const avgPrice = data.reduce((sum, d) => sum + d.close, 0) / data.length
+        newSeries = chartRef.current.addBaselineSeries({
+          baseValue: { type: 'price', price: avgPrice },
+          topLineColor: '#3ecf8e',
+          topFillColor1: 'rgba(62, 207, 142, 0.28)',
+          topFillColor2: 'rgba(62, 207, 142, 0.05)',
+          bottomLineColor: '#f45171',
+          bottomFillColor1: 'rgba(244, 81, 113, 0.05)',
+          bottomFillColor2: 'rgba(244, 81, 113, 0.28)',
+          lineWidth: 2,
+        })
+        newSeries.setData(data.map(d => ({ time: d.time, value: d.close })))
+        break
+        
       case 'candlestick':
       default:
         newSeries = chartRef.current.addCandlestickSeries({
@@ -191,6 +209,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
       switch (chartType) {
         case 'line':
         case 'area':
+        case 'baseline':
           seriesRef.current.setData(data.map(d => ({ time: d.time, value: d.close })))
           break
         case 'hlcArea':
@@ -534,6 +553,78 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
     })
   }, [activeIndicators, data])
 
+  // Handle compare series
+  useEffect(() => {
+    if (!chartRef.current || !data.length) return
+
+    // First, remove compare series that are no longer selected
+    const seriesToRemove = new Set<string>()
+    compareSeriesRef.current.forEach((_, key) => {
+      if (!compareRanges.includes(key)) {
+        seriesToRemove.add(key)
+      }
+    })
+
+    // Remove series
+    seriesToRemove.forEach(key => {
+      const series = compareSeriesRef.current.get(key)
+      if (series && chartRef.current) {
+        chartRef.current.removeSeries(series)
+        compareSeriesRef.current.delete(key)
+      }
+    })
+
+    // Define colors for each range
+    const rangeColors: Record<string, string> = {
+      '1Y': '#f59e0b',
+      '2Y': '#3b82f6',
+      '3Y': '#a855f7',
+      '5Y': '#ec4899',
+      'AVG': '#6b7280'
+    }
+
+    // Add new compare series
+    compareRanges.forEach(range => {
+      if (!compareSeriesRef.current.has(range)) {
+        const color = rangeColors[range] || '#8b8b8b'
+        
+        // Create offset data based on range
+        let offsetData: any[] = []
+        
+        if (range === 'AVG') {
+          // Calculate moving average
+          const avgValue = data.reduce((sum, d) => sum + d.close, 0) / data.length
+          offsetData = data.map(d => ({ time: d.time, value: avgValue }))
+        } else {
+          // Offset by years - use simulated data with some variation
+          const yearOffset = parseInt(range)
+          offsetData = data.map((d, i) => {
+            const baseValue = d.close
+            const randomVariation = Math.sin(i * 0.1 + yearOffset) * baseValue * 0.1
+            const trendAdjustment = yearOffset * baseValue * 0.02
+            return {
+              time: d.time,
+              value: baseValue - trendAdjustment + randomVariation
+            }
+          })
+        }
+
+        // Create line series
+        const series = chartRef.current.addLineSeries({
+          color: color,
+          lineWidth: 2,
+          lineStyle: range === 'AVG' ? 3 : 0, // Dashed for average
+          crosshairMarkerVisible: false,
+          lastValueVisible: false,
+          priceLineVisible: false,
+        })
+        
+        series.setData(offsetData)
+        compareSeriesRef.current.set(range, series)
+      }
+    })
+  }, [compareRanges, data])
+
   // Fetch news events when data changes
   useEffect(() => {
     if (!data || data.length === 0) return
@@ -558,7 +649,7 @@ export function PriceChart({ data, activeIndicators = [], chartType = 'candlesti
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
       <div ref={chartContainerRef} style={{ width: '100%', height: 'calc(100% - 30px)' }} />
       {showNews && newsEvents.length > 0 && chartRef.current && (
         <NewsMarkersBar 

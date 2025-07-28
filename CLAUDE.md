@@ -26,4 +26,8 @@ npm install lightweight-charts zustand
 npm run dev    # Starts at localhost:3000
 ```
 
+## Project Conventions
+- We are ALWAYS running a server @ 3000
+
 [... rest of the existing content remains unchanged ...]
+```
